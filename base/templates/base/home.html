@@ -1,0 +1,351 @@
+<!---------------------------CSS Styling--------------------------------->
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #fcfcfc;
+    color: #333;
+  }
+
+  h1 {
+    text-align: center;
+    margin-bottom: 30px;
+    color: #2c3e50;
+  }
+
+  #map {
+    position: absolute;
+    width: 70%;
+    height: 80vh;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  .controls {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 1000;
+    background: white;
+    padding: 15px;
+    border-radius: 5px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    width: 300px;
+  }
+
+  .stats {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+  }
+</style>
+<!---------------------------CSS Styling--------------------------------->
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mapbox Demo</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+
+  <h1>Bike and Pedestrian Counts</h1>
+
+  <script>
+    let markers = [] // Global array to hold markers shown on the map, useful for filtering
+  </script>
+
+  <script>
+    var counters = []; // Global counters array
+    
+    //Fetch counters from the API, store them in the counters array 
+    fetch('http://localhost:8000/counters/')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network error');
+        }
+        return response.json();
+      })
+      .then(data => {
+        counters = data;
+        alert('Fetch successful! Received ' + counters.length + ' counters.');
+      })
+      .catch(error => {
+        alert(' problem fetching counters:');
+      });
+  </script>
+
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
+  
+</head>
+<body>
+  <div id="map"></div>
+
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+
+  <script>
+    mapboxgl.accessToken = 'pk.eyJ1IjoidGNhcGVsMyIsImEiOiJjbWI5dTBkbGwwM2VsMmpuNnozYTR4c3c5In0.ExcltcyUTsype2FN-oSjnA'; //Mapbox API key
+    const map = new mapboxgl.Map({
+      container: 'map',
+      style: 'mapbox://styles/mapbox/streets-v11',
+      center: [-74.5, 40],
+      zoom: 9
+    });
+    // Add simple navigation controls to the map
+    map.addControl(new mapboxgl.NavigationControl());
+
+    let selectedCounter = null; // Global variable to hold the users currently selected counter
+    let heatmapSource = null; // Global variable to hold the heatmap source
+    let heatmapLayer = null; // Global variable to hold the heatmap layer
+
+    // On map load, add the heatmap layer
+    map.on('load', () => {
+      heatmapSource = map.addSource('heat-source', {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: []
+        }
+      });
+
+      heatmapLayer = map.addLayer({
+        id: 'heat-layer',
+        type: 'heatmap',
+        source: 'heat-source',
+        maxzoom: 15,
+        paint: {
+          'heatmap-weight': ['get', 'intensity'],
+          'heatmap-intensity': 1,
+          'heatmap-color': [
+            'interpolate',
+            ['linear'],
+            ['heatmap-density'],
+            0, 'rgba(0,0,255,0)',
+            0.2, 'blue',
+            0.4, 'cyan',
+            0.6, 'lime',
+            0.8, 'yellow',
+            1, 'red'
+          ],
+          'heatmap-radius': 50,
+          'heatmap-opacity': 0.8
+        }
+      });
+      // Add markers for each counter on the map
+      counters.forEach(counter => {
+        let marker = new mapboxgl.Marker()
+          .setLngLat([counter.longitude, counter.latitude])
+          .setPopup(new mapboxgl.Popup().setText(counter.counter_name))
+          .addTo(map);
+        markers.push(marker);
+      });
+    });
+
+    
+  </script>
+  <!--Slider that scrubs across selected dates-->
+  <div class="controls">
+    <input type="range" min="0" max="100" value="50" class="slider" id="myRange" step="1">
+    <span id="sliderValue"></span>
+  </div>
+<!--From and To selected dates-->
+  <div class="dateselect">
+    <input type="date" id="fromDate">
+    <input type="date" id="toDate">
+  </div>
+
+  <!--Dropdown menu to choose specific sensor-->
+  <div>
+    <label for="myDropdown">Sensor:</label>
+    <select id="myDropdown" name="options">
+      <option value="All">All</option>
+    </select>
+
+    <div>
+  <a id="insightsLink" href="/superset/">
+    <button id = "insightsButton">Detailed insights</button>
+  </a>
+</div>
+
+<label>
+  <input type="checkbox" id="myCheckbox" name="myCheckbox" value="1">
+  Cleaned counts
+</label>
+
+<label>
+  <input type="checkbox" id="myCheckbox" name="myCheckbox" value="1">
+  Hourly counts
+</label>
+
+
+
+    <script>
+      //Populate the dropdown with counters
+      let dropdown = document.getElementById('myDropdown');
+      counters.forEach(counter => {
+        let option = document.createElement('option');
+        option.value = counter.counter_id;
+        option.textContent = counter.counter_name;
+        dropdown.appendChild(option);
+      });
+
+      //Logic to handle "All" option on dropdown, shows all markers except the selected one
+      dropdown.addEventListener('change', (event) => {
+  const insightsLink = document.getElementById('insightsLink');
+
+  if (event.target.value === 'All') {
+    selectedCounter = null;
+    markers.forEach(marker => marker.getElement().style.display = '');
+    insightsLink.href = '/superset/';
+    updateSliderOutput();
+    return;
+  }
+  // If a specific counter is selected, hide all markers except the selected one
+  const selectedId = event.target.value;
+  selectedCounter = counters.find(c => c.counter_id == selectedId);
+  markers.forEach(marker => {
+    if (marker.getLngLat().lng === selectedCounter.longitude && marker.getLngLat().lat === selectedCounter.latitude) {
+      marker.getElement().style.display = '';
+     
+    } else {
+      marker.getElement().style.display = 'none';
+    }
+  });
+
+  // Update the link to include the counter ID
+  insightsLink.href = `/superset/?counter_id=${selectedId}`;
+  updateSliderOutput();
+});
+    </script>
+  </div>
+  <!--Display the count of selected counters-->
+  <div class="stats">
+    <p id="counts">Todays count: </p> <!--Total counts for that day across all counters-->
+    <p id="selectedCounts">No counters selected</p> <!--Total counts for that day for the selected counter-->
+    <p id = "dailyAvg">Daily Average: </p>  <!--Daily average across all selected days (Not implemented yet)-->
+    <p id = "hourlyAvg">Hourly Average: </p> <!--Hourly average across all selected days (Not implemented yet)-->
+    <p id = "sevenDayAvg">7-Day Average: </p> <!--7-day average across all selected days (Not implemented yet)-->
+    <p id = "monthAvg">Monthly Average: </p> <!--Monthly average across all selected days (Not implemented yet)-->
+  </div>
+
+  <script>
+    const fromDate = document.getElementById('fromDate'); //Selected from date
+    const toDate = document.getElementById('toDate'); //Selected to date
+    const slider = document.getElementById('myRange'); //Slider to scrub through dates
+    const output = document.getElementById('sliderValue'); //Sliders value output (ie "2023-10-01")
+    let lastDate = null; //Stores the last selected date to avoid unnecessary updates
+
+    //Updates the heatmap with new features (counts for the selected date)
+    function updateHeatmap(features) {
+      if (map.getSource('heat-source')) {
+        map.getSource('heat-source').setData({
+          type: 'FeatureCollection',
+          features: features
+        });
+      }
+    }
+    //Updates the output of the slider, also updates and displays counts for the selected date
+    function updateSliderOutput() {
+      if (fromDate.value && toDate.value) { //Check if both dates are selected
+        const from = new Date(fromDate.value); 
+        const to = new Date(toDate.value);
+
+        //Calculate the days between the selected dates
+        const totalDays = (to - from) / (1000 * 60 * 60 * 24);
+        if (totalDays <= 0) {
+          alert('End date must be after start date');
+          return;
+        }
+
+
+        const selectedDays = Math.round(totalDays * (slider.value / 100)); // Calculate the number of days to select based on the slider value
+        const selectedDate = new Date(from); // Selected date
+        // Date to display based on the slider value. Ie if the slider is at 50% with 20 day range date will be 10 days after the from date
+        selectedDate.setDate(from.getDate() + selectedDays); 
+        const newDateStr = selectedDate.toISOString().split('T')[0]; // Format the selected date as YYYY-MM-DD
+        output.textContent = newDateStr; //Update the slider output text
+
+        if (newDateStr === lastDate) return; // If the date hasn't changed, do nothing
+        lastDate = newDateStr; // Update the last date to the new date
+
+        //*********Count logic**********
+
+        let totalCount = 0; // Total counts for the selected date across all counters
+        let selectedCount = 0; // Total counts for the selected date for the selected counter
+        const heatmapFeatures = []; // Array to hold the heatmap features for the selected date
+        const counterPromises = []; // Array to hold promises for fetching counts from each counter
+
+        //Loops through all counters, nested inside is a loop that fetches the counts for each datastream of the counter and sums them up
+        counters.forEach(counter => {
+          if (!selectedCounter || selectedCounter.counter_id === counter.counter_id) {
+            counterPromises.push(
+              fetch(`http://localhost:8000/counters/${counter.counter_id}/datastreams/`)
+                .then(response => response.json())
+                .then(datastreams => {
+                  const datastreamPromises = datastreams.map(ds => {
+                    return fetch(`http://localhost:8000/datastreams/${ds.datastream_id}/counts`)
+                      .then(response => response.json())
+                      .then(counts => {
+                        let counterTotal = 0;
+                        counts.forEach(count => {
+                          const countDate = new Date(count.date_time).toISOString().split('T')[0];
+                          if (countDate === newDateStr) {
+                            counterTotal += count.raw_count;
+                          }
+                        });
+                        // If there are counts for the selected date, add them to the heatmap features
+                        if (counterTotal > 0) {
+                          heatmapFeatures.push({
+                            type: 'Feature',
+                            geometry: {
+                              type: 'Point',
+                              coordinates: [counter.longitude, counter.latitude]
+                            },
+                            properties: {
+                              intensity: counterTotal / 750
+                            }
+                          });
+                          
+                          totalCount += counterTotal; //Sum
+                          
+                          if (selectedCounter && selectedCounter.counter_id === counter.counter_id) {
+                            selectedCount = counterTotal;
+
+                          } // If the selected counter matches, set the selected count
+                        }
+                      });
+                  });
+                  return Promise.all(datastreamPromises); // Wait for all datastream promises to finiush
+                })
+            );
+          }
+        });
+        // Wait for all counter promises to finish, then update the heatmap and counts display
+        Promise.all(counterPromises).then(() => {
+          updateHeatmap(heatmapFeatures);
+          document.getElementById('counts').innerHTML = `<p>Total counts: ${totalCount}</p>`;
+          
+          if (selectedCounter) {
+  const daysRange = totalDays + 1; // total days including both start and end
+  document.getElementById('selectedCounts').innerHTML = 
+    `<p>Total counts for this day: ${selectedCount}</p>` //Counts for the date
+   // + `<p>Daily Average: ${(totalCount / (to - from)) }</p>`; // Daily average across all selected days (Not implemented yet)
+} else {
+  document.getElementById('selectedCounts').innerHTML = `<p>No counters selected</p>`;
+}
+        });
+      } else {
+        output.textContent = 'Select both dates';
+      }
+
+
+
+    }
+    //Update as needed whenever the from date, to date or slider is changed
+    fromDate.addEventListener('change', updateSliderOutput);
+    toDate.addEventListener('change', updateSliderOutput);
+    slider.addEventListener('input', updateSliderOutput);
+  </script>
+</body>
+</html>
