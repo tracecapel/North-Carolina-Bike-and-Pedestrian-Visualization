@@ -17,6 +17,8 @@ When you click a counter, you also have the additional option of downloading all
 Double clicking a counter will re-direct you to an Apache Superset dashboard displaying insights into activity. It is split by bike/pedestrian datastreams. It shows activity from the past month, total recorded counts all time, monthly total counts for the previous calendar year, average counts by hour of the day, and most popular days of the week. Note that a "count" is a record of activity, ie. if one person walks past a counter that is a "count".
 
 
+
+
 **Requirements**
 
 # Python Packages
