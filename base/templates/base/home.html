@@ -344,7 +344,7 @@
     let markers = []; // Global array to hold markers shown on the map
     let counters = []; // Global counters array
     let geocoder; // For address search
-    let currentSelectedCounter = null;
+    let currentSelectedCounter = null; // selected counter 
     let downloadInProgress = false; // Flag to prevent multiple downloads
   </script>
  
@@ -418,7 +418,7 @@
     // Add navigation controls
     map.addControl(new mapboxgl.NavigationControl());
 
-    // Initialize geocoder for address search
+    // Initialize geocoder for address search (not working)
     geocoder = new MapboxGeocoder({
       accessToken: mapboxgl.accessToken,
       mapboxgl: mapboxgl,
@@ -437,14 +437,14 @@
         [-75.4606, 36.5880]
       ]);
      
-      // Add states layer
+      
       map.addSource('states', {
         type: 'vector',
         url: 'mapbox://mapbox.us-states-v1'
       });
     });
 
-    // Search functionality
+    // *******Search functionality**************
     let searchTimeout;
     let selectedSearchIndex = -1;
 
@@ -483,7 +483,7 @@
         `;
       });
 
-      // Add address search option if the query looks like an address
+      // Add address search option if the search looks like an address
       if (query.length > 3 && /[a-zA-Z]/.test(query)) {
         resultsHTML += `
           <div class="search-result-item" data-type="address" data-query="${query}" data-index="${counterResults.length}">
@@ -530,11 +530,11 @@
           highlightMarker(counter);
         }
       } 
-      
+      // Search address using geocode (not working)
       else if (type === 'address') {
         const query = element.getAttribute('data-query');
         
-        // Use Mapbox Geocoding API
+        
         geocoder.query(query);
         geocoder.on('result', function(e) {
           const result = e.result;
@@ -544,7 +544,7 @@
             duration: 1000
           });
           
-          // Add a temporary marker for the address
+          // Add a temporary marker for the address (not working)
           const addressMarker = new mapboxgl.Marker({color: 'red'})
             .setLngLat(result.center)
             .setPopup(new mapboxgl.Popup().setText(result.place_name))
@@ -802,7 +802,7 @@
       }
     });
 
-    // Download functionality
+    // ********Download functionality****************
     function downloadData(format) {
       const timestamp = new Date().toISOString().split('T')[0];
       let filename, content, mimeType;
@@ -825,7 +825,7 @@
           return;
       }
 
-      // Create and trigger download
+      //  trigger download
       const blob = new Blob([content], { type: mimeType });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -836,33 +836,33 @@
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      // Close download options
+      
       document.getElementById('downloadOptions').classList.remove('show');
     }
 
     function convertToCSV(data) {
       if (!data || data.length === 0) return '';
 
-      // Get all unique keys from all objects
+     
       const keys = [...new Set(data.flatMap(Object.keys))];
       
-      // Create header row
+     
       const header = keys.join(',');
       
-      // Create data rows
+      
       const rows = data.map(item => {
         return keys.map(key => {
           let value = item[key];
           
-          // Handle null/undefined values
+          
           if (value === null || value === undefined) {
             value = '';
           }
           
-          // Convert to string and escape quotes
+         
           value = String(value).replace(/"/g, '""');
           
-          // Wrap in quotes if contains comma, newline, or quote
+        
           if (value.includes(',') || value.includes('\n') || value.includes('"')) {
             value = `"${value}"`;
           }
@@ -874,7 +874,7 @@
       return [header, ...rows].join('\n');
     }
 
-    // Download event listeners
+   
     document.getElementById('downloadBtn').addEventListener('click', function(e) {
       e.stopPropagation();
       const options = document.getElementById('downloadOptions');
@@ -897,19 +897,19 @@
       const counterId = currentSelectedCounter.counter_id;
       
       try {
-        // Show the loading overlay
+        // loading overlay
         const loadingOverlay = document.getElementById('loadingOverlay');
         loadingOverlay.style.display = 'flex';
         
-        // Disable download buttons
+        
         document.getElementById('downloadBtn').disabled = true;
         document.getElementById('downloadCountsBtn').disabled = true;
         
-        // Fetch datastreams
+        // Fetch datastreams from API
         const datastreamsResponse = await fetch(`http://localhost:8000/counters/${counterId}/datastreams/`);
         const datastreamsData = await datastreamsResponse.json();
         
-        // Extract datastream IDs
+       
         const datastreamIds = datastreamsData.map(ds => ds.datastream_id);
         
         // Fetch counts for all datastreams
@@ -921,7 +921,7 @@
         
         const allCountsResults = await Promise.all(countsPromises);
         
-        // Combine all counts
+        // Combine  counts
         const allCounts = allCountsResults.flatMap(result => 
           result.counts.map(count => ({
             ...count,
@@ -934,13 +934,13 @@
         zip.file(`counter_${counterId}_datastreams.json`, JSON.stringify(datastreamsData, null, 2));
         zip.file(`counter_${counterId}_counts.json`, JSON.stringify(allCounts, null, 2));
         
-        // Add separate files for each datastream
+        //  separate files for each datastream
         allCountsResults.forEach(result => {
           zip.file(`counter_${counterId}_datastream_${result.datastreamId}_counts.json`, 
                    JSON.stringify(result.counts, null, 2));
         });
         
-        // Generate and download zip
+        //  download zip
         const content = await zip.generateAsync({ type: "blob" });
         const url = URL.createObjectURL(content);
         const a = document.createElement('a');
@@ -955,13 +955,14 @@
         console.error('Download failed:', error);
         alert('Failed to download counter data');
       } finally {
-        // Re-enable download buttons
+    
         document.getElementById('downloadBtn').disabled = false;
         document.getElementById('downloadCountsBtn').disabled = false;
         
-        // Hide loading overlay
+       
         const loadingOverlay = document.getElementById('loadingOverlay');
         loadingOverlay.style.display = 'none';
+
         
         downloadInProgress = false;
       }
