@@ -1,7 +1,7 @@
 **Overview**
 
 
-This project is a demonstration tool to visualize and gain deeper insights into recorded pedestrian and bike activity all throughout North Carolina. Counters placed throughout the state at key locations measure bike and pedestrian traffic and log this data into a centralized database with millions of entries. The goal of this project is to be able to interact and visualize this data in an intuitive and user friendly way.
+This project is a demonstration tool to visualize and gain deeper insights into recorded pedestrian and bike activity throughout North Carolina. Counters placed throughout the state at key locations measure bike and pedestrian traffic and log this data into a centralized database with millions of entries. The goal of this project is to be able to interact and visualize this data in an intuitive and user friendly way.
 
 <img width="1869" height="947" alt="image" src="https://github.com/user-attachments/assets/f559b44d-a5bd-45c8-91a8-ac0446760184" />
 
