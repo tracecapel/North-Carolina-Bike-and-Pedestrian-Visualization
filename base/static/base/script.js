@@ -8,7 +8,7 @@ let searchTimeout;
 let selectedSearchIndex = -1;
 
 // Initialize map
-mapboxgl.accessToken = 'pk.eyJ1IjoidGNhcGVsMyIsImEiOiJjbWI5dTBkbGwwM2VsMmpuNnozYTR4c3c5In0.ExcltcyUTsype2FN-oSjnA';
+mapboxgl.accessToken = ''; // Insert your token here
 const map = new mapboxgl.Map({
   container: 'map',
   style: 'mapbox://styles/mapbox/streets-v11',
