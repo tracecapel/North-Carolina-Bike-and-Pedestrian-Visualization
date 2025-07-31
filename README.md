@@ -5,7 +5,7 @@ This project is a demonstration tool to visualize and gain deeper insights into 
 
 <img width="1869" height="947" alt="image" src="https://github.com/user-attachments/assets/f559b44d-a5bd-45c8-91a8-ac0446760184" />
 
-The map displays counter locations. You can search for counters via name or ID or search manually on the map. Clicking the "download counters metadata" button will download metadata of all of the current counters on the map. This incudes things such as the latitude, longitude, name, ID etc for each counter. 
+The map displays counter locations. You can search for counters via name or ID or search manually on the map. Clicking the "download counters metadata" button will download metadata of all of the current counters on the map incuding the latitude, longitude, name, ID etc for each counter. 
 
 <img width="1869" height="947" alt="image" src="https://github.com/user-attachments/assets/9983c7e6-7b10-4602-8c21-153d60703e4b" />
 When you click a counter, you also have the additional option of downloading all the selected counters datastreams and counts. This is all of the raw data collected by the counter, and includes consolidated counts as well as seperate datastreams.
