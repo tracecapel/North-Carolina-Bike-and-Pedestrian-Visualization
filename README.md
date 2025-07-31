@@ -10,7 +10,8 @@ The map displays counter locations. You can search for counters via name or ID o
 <img width="1869" height="947" alt="image" src="https://github.com/user-attachments/assets/9983c7e6-7b10-4602-8c21-153d60703e4b" />
 When you click a counter, you also have the additional option of downloading all the selected counters datastreams and counts. This is all of the raw data collected by the counter, and includes consolidated counts as well as seperate datastreams.
 
-<img width="1869" height="947" alt="image" src="https://github.com/user-attachments/assets/725bb16e-d41b-4002-96d7-119d6fa17e7d" />
+<img width="1869" height="949" alt="image" src="https://github.com/user-attachments/assets/9f775ce4-0730-4ccb-9993-bafc789a75d0" />
+
 
 
 Double clicking a counter will re-direct you to an Apache Superset dashboard displaying insights into activity. It is split by bike/pedestrian datastreams. It shows activity from the past month, total recorded counts all time, monthly total counts for the previous calendar year, average counts by hour of the day, and most popular days of the week. Note that a "count" is a record of activity, ie. if one person walks past a counter that is a "count".
